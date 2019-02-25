@@ -8,6 +8,7 @@
  import TableRow from '@material-ui/core/TableRow';
  import TableCell from '@material-ui/core/TableCell';
  import { withStyles} from '@material-ui/core/styles';
+ import CircularProgress from '@material-ui/core/CircularProgress';
 
  const styles = theme => ({
      root: {
@@ -17,38 +18,40 @@
      },
      table: {
          minWidth: 1080
-     }
- })
+     },
+     progress: {
+        margin: theme.spacing.unit * 2,
+      },
+ });
 
-const customers = [
-    {
-    'id':1,
-    'image': 'http://placeimg.com/64/64/1',
-    'name': '최낙준',
-    'birthday': '910914',
-    'gender': '남자',
-    'job': '사원'
-},
-{
-    'id':2,
-    'image': 'http://placeimg.com/64/64/2',
-    'name': '홍길동',
-    'birthday': '961222',
-    'gender': '남자',
-    'job': '대학생'
-},
-{
-    'id':3,
-    'image': 'http://placeimg.com/64/64/3',
-    'name': '이순신',
-    'birthday': '912392',
-    'gender': '여자',
-    'job': '중학생'
-}
-]
+
 
 
  class App extends Component {
+
+    state = {
+        customers: "",
+        completed: 0,
+    }
+    componentDidMount() {
+        this.timer = setInterval(this.progress, 20);
+
+        this.callApi()
+        .then(res => this.setState({customers: res}))
+        .catch(err => console.log(err));
+
+
+    }
+    callApi = async () => {
+        const response = await fetch('/api/customers');
+        const body = await response.json();
+        return body;
+    }
+
+    progress = () => {
+        const { completed } = this.state;
+        this.setState({ completed: completed >= 100 ? 0 : completed + 1 });
+      };
      render() {
         const {classes} = this.props;
          return (
@@ -66,7 +69,7 @@ const customers = [
                      </TableHead>
                      <TableBody>
                         {
-                            customers.map(c => {
+                            this.state.customers ? this.state.customers.map(c => {
                                 return  (
                                 <Customer 
                                 key={c.id}
@@ -78,7 +81,16 @@ const customers = [
                                 job={c.job}
                                 />
                                 );
-                            })
+                            }) :
+                            <TableRow>
+                                <TableCell colSpan="6" align="center">
+                                <CircularProgress
+                                    className={classes.progress}
+                                    variant="determinate"
+                                    value={this.state.completed}
+                                    />
+                                </TableCell>
+                            </TableRow>
                         }
                      </TableBody>
                  </Table>
@@ -86,5 +98,6 @@ const customers = [
          );
      }
  }
+
 
  export default withStyles(styles) (App) ;
