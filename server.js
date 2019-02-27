@@ -1,3 +1,4 @@
+const fs = require('fs');
 const express = require('express');
 const bodyParser = require('body-parser');
 // const cors = require('cors');
@@ -13,35 +14,47 @@ app.use(bodyParser.urlencoded({ extended: true}));
 //     res.send({message: 'Hello Express!'});
 // });
 
+const data = fs.readFileSync('./database.json');
+const conf = JSON.parse(data);
+const mariasql = require('mariadb');
+const connection = mariasql.createPool({
+    host: conf.host,
+    user: conf.user,
+    password: conf.password,
+    port: conf.port,
+    database: conf.database
+});
+
 app.get('/api/customers', (req, res) => {
-    res.send(
-        [
-            {
-            'id':1,
-            'image': 'http://placeimg.com/64/64/1',
-            'name': '최낙준',
-            'birthday': '910914',
-            'gender': '남자',
-            'job': '사원'
-        },
-        {
-            'id':2,
-            'image': 'http://placeimg.com/64/64/2',
-            'name': '홍길동',
-            'birthday': '961222',
-            'gender': '남자',
-            'job': '대학생'
-        },
-        {
-            'id':3,
-            'image': 'http://placeimg.com/64/64/3',
-            'name': '이순신',
-            'birthday': '912392',
-            'gender': '여자',
-            'job': '중학생'
-        }
-        ]
-    );
-})
+    connection.getConnection()
+    .then(conn => {
+        
+        conn.query("SELECT * FROM CUSTOMER")
+            .then((rows) => {
+                console.log("row = " +rows);
+                res.send(rows); 
+            })
+            .then((res) => {
+                console.log("res = " + res);
+                conn.end();
+            })
+            .catch(err => {
+                console.log(err);
+                conn.end();
+            })
+
+        }).catch(err => {
+        console.log("err > " + err);
+    });
+});
+
+
+
+// app.get('/api/customers', (req, res) => {
+//     connection.query( "select * from customer").then(err, rows, fields) => {
+//             res.send(rows);
+//         }
+//     )
+// })
 
 app.listen(port, () => console.log(`Listening on port ${port}`));
